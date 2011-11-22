@@ -1,15 +1,15 @@
 <?php
-/*	This filter calculates the EMAs for all the scrips in NSE database.
-	This script must be run after the CM database is updated. This script
-	does the following:
-	
-	1) Calculate EMAs for all the stocks.
-	2) Calculate the first EMA values for new scrips.
-	3) Move changed/delisted scrips to obsolete data table.
-	
-	Author : Rahul Devaskar
-	THIS SCRIPT IS A PROPERTY OF BLACKBULL INVESTMENT COMPANY. COPYING, EDMTING
-	OR DELETING THIS SCRIPT IS PROHIBITED WITHOUT THE PERMISSION FROM THE AUTHOR.
+/*  This filter calculates the EMAs for all the scrips in NSE database.
+  This script must be run after the CM database is updated. This script
+  does the following:
+  
+  1) Calculate EMAs for all the stocks.
+  2) Calculate the first EMA values for new scrips.
+  3) Move changed/delisted scrips to obsolete data table.
+  
+  Author : Rahul Devaskar
+  THIS SCRIPT IS A PROPERTY OF BLACKBULL INVESTMENT COMPANY. COPYING, EDMTING
+  OR DELETING THIS SCRIPT IS PROHIBITED WITHOUT THE PERMISSION FROM THE AUTHOR.
 */
 
 // Load the database.
@@ -57,12 +57,13 @@ function processMaData($dataStore, $scrip, $sm = 5, $mid = 22, $long = 154){
     
     if($count_sm){
       $total_sm = $total_sm + $curr_c;
-      $total_v = $total_v + $curr_v;
       $count_sm = $count_sm - 1;
     }
     
     if($count_smy && $i){
+      /* Need to calculate small term average of volume too */
       $total_smy = $total_smy + $curr_c;
+      $total_v = $total_v + $curr_v;
       $count_smy = $count_smy - 1;
     }
     
