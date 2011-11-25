@@ -186,6 +186,13 @@ function fetchDBData($dataSize = 160){
 function addResultToDB($result){
   /* This function adds identified crossovers to macrossover table.
   */
+  /* First check whether we have any results to add */
+  $bullCount = count($result["B"]);
+  $bearCount = count($result["S"]);
+  if($bullCount == 0 && $bearCount == 0){
+    /* No records */
+    return true;
+  }
   $query_values = "";
   foreach($result as $type => $list){
     foreach($list as $details){
