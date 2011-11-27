@@ -13,12 +13,12 @@
 */
 
 // Load the database.
-require_once('dba.php');
+require_once('../../common/dba.php');
 
 // Load filter functions.
-require_once ('filter_functions.php');
+require_once ('../../common/filter_functions.php');
 
-function processMaData($dataStore, $scrip, $sm = 5, $mid = 22, $long = 154){
+function processMaData($dataStore, $scrip, $sm = 12, $mid = 26, $long = 154){
   /*Process MA data as follows
     1. Loop only once to calculate everything
     2. get 154 days MA
@@ -213,7 +213,7 @@ function getStatus(){
   /* This function checks whether we need to calculate crossovers for today
     If we have already calculated crossovers then exit.
   */
-  $status_query = "SELECT id from updatestatus WHERE tablename = 'macrossover' AND timestamp = NOW()";
+  $status_query = "SELECT id from updatestatus WHERE tablename = 'macrossover' AND timestamp = CURDATE()";
   $status = mysql_query($status_query);
   if (!$status) {
     echo 'Could not run query: ' . mysql_error();
@@ -229,13 +229,13 @@ function getStatus(){
 function updateStatus(){
   /* Once MA calculations are done, update the status in updatestatus table
   */
-  $update_query = "UPDATE updatestatus SET timestamp= NOW() WHERE tablename='macrossover'";
+  $update_query = "UPDATE updatestatus SET timestamp = CURDATE() WHERE tablename='macrossover'";
   $update_status = mysql_query($update_query);
   if (!$update_status) {
     echo 'Could not run query: ' . mysql_error();
     return false;
   }
-  if(mysql_affected_rows($update_status)){
+  if(mysql_affected_rows()){
     /* Successfully updated status */
     return true;
   }
@@ -277,7 +277,7 @@ function aajCrossOver(){
 
 /* All required functions are defined so get to business */
 aajCrossOver();
-
+updateStatus();
 mysql_close($con);
 exit;
 ?>
