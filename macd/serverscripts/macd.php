@@ -94,13 +94,10 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
       array_push($results["macd"], round($emaSm - $emaMid, 2));
     }
     /**************************************************************************/
-    if($i >= $datacount - 6 && $i < $datacount - 1){
-      $totalV += $curr_v;
-    }
     if($i == $datacount - 1){
-      $maV = $totalV / 5;
       $today = $curr_data["d"];
       $close = &$curr_c;
+      $volume = &$curr_v;
     }
     /**************************************************************************/
   }
@@ -123,7 +120,7 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
     }
   }
   
-  return array("results" => $results, "volumeMa" => $maV, "volume" => $curr_v, "c" => $close, "d" => $today);
+  return array("results" => $results, "v" => $volume, "c" => $close, "d" => $today);
 }
 
 function isBullCross($value){
@@ -135,14 +132,12 @@ function isBullCross($value){
   $countMacd = count($macd);
   $signal = $result["signal"];
   $countSignal = count($signal);
-  $volumeMa = $value["volumeMa"];
-  $todayV = $value["volume"];
   $todayMacd = $macd[$countMacd - 1];
   $yMacd = $macd[$countMacd - 2];
   $todaySignal = $signal[$countSignal - 1];
   $ySignal = $signal[$countSignal - 2];
 
-  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayV >= $volumeMa && $todayMacd <= 0){
+  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd <= 0){
     /* Got a bullish crossover! */
     return true;
   }
@@ -158,14 +153,12 @@ function isBearCross($value){
   $countMacd = count($macd);
   $signal = $result["signal"];
   $countSignal = count($signal);
-  $volumeMa = $value["volumeMa"];
-  $todayV = $value["volume"];
   $todayMacd = $macd[$countMacd - 1];
   $yMacd = $macd[$countMacd - 2];
   $todaySignal = $signal[$countSignal - 1];
   $ySignal = $signal[$countSignal - 2];
 
-  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayV >= $volumeMa  && $todayMacd >= 0){
+  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd >= 0){
     /* Got a bearish crossover! */
     return true;
   }
