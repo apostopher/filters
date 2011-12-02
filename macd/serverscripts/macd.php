@@ -72,21 +72,17 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
     /**************************************************************************/
     if($i < $sm){
       $totalSm += $curr_c;
-    }
-    if($i == $sm - 1){
+    }else if($i == $sm - 1){
       $emaSm = $totalSm / $sm;
-    }
-    if($i >= $sm){
+    }else {
       $emaSm = (($curr_c - $emaSm) * $multSm) + $emaSm;
     }
     /**************************************************************************/
     if($i < $mid){
       $totalMid += $curr_c;
-    }
-    if($i == $mid - 1){
+    }else if($i == $mid - 1){
       $emaMid = $totalMid / $mid;
-    }
-    if($i >= $mid){
+    }else {
       $emaMid = (($curr_c - $emaMid) * $multMid) + $emaMid;
     }
     /**************************************************************************/
@@ -109,12 +105,10 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
     $curr_macd = $results["macd"][$i];
     if($i < $sig){
       $totalSig += $curr_macd;
-    }
-    if($i == $sig - 1){
+    }else if($i == $sig - 1){
       $emaSig = $totalSig / $sig;
       array_push($results["signal"], $emaSig);
-    }
-    if($i >= $sig){
+    }else {
       $emaSig = (($curr_macd - $emaSig) * $multSig) + $emaSig;
       array_push($results["signal"], round($emaSig, 2));
     }
