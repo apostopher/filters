@@ -38,30 +38,26 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
 
   /* Initialize vars */
 
-  $yEmaSm = 0;
+  $yEmaSm  = 0;
   $yEmaMid = 0;
   $yEmaSig = 0;
-
-  $emaSm = 0;
+  
+  $emaSm  = 0;
   $emaMid = 0;
   $emaSig = 0;
   
   /* Calculate EMA multipliers */
-  $multSm = 2 / ($sm + 1);
+  $multSm  = 2 / ($sm + 1);
   $multMid = 2 / ($mid + 1);
   $multSig = 2 / ($sig + 1);
   
-  $totalSm = 0;
+  $totalSm  = 0;
   $totalMid = 0;
   $totalSig = 0;
-  $totalV = 0;
+  $totalV   = 0;
   
-  $keySm = "e".$sm;
-  $keyMid = "e".$sm;
-  $keySig = "e".$sm;
-
-  $results = array();
-  $results["macd"] = array();
+  $results           = array();
+  $results["macd"]   = array();
   $results["signal"] = array();
 
   /* MACD calculation must be done with single pass. Iterate once and calculate
@@ -70,8 +66,8 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
   for($i = 0; $i < $datacount; $i++){
 
     $curr_data = $dataStore[$i];
-    $curr_c = $curr_data["c"];
-    $curr_v = $curr_data["v"];
+    $curr_c    = $curr_data["c"];
+    $curr_v    = $curr_data["v"];
     /**************************************************************************/
     if($i < $sm){
       $totalSm += $curr_c;
@@ -123,15 +119,15 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
 function isCross($value){
   /* Check for MACD signal line crossover
   */
-  $result = $value["results"];
-  $macd = $result["macd"];
-  $countMacd = count($macd);
-  $signal = $result["signal"];
-  $countSignal = count($signal);
-  $todayMacd = $macd[$countMacd - 1];
-  $yMacd = $macd[$countMacd - 2];
-  $todaySignal = $signal[$countSignal - 1];
-  $ySignal = $signal[$countSignal - 2];
+  $result      =  $value["results"];
+  $macd        =  $result["macd"];
+  $countMacd   =  count($macd);
+  $signal      =  $result["signal"];
+  $countSignal =  count($signal);
+  $todayMacd   =  $macd[$countMacd - 1];
+  $yMacd       =  $macd[$countMacd - 2];
+  $todaySignal =  $signal[$countSignal - 1];
+  $ySignal     =  $signal[$countSignal - 2];
   
   if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd <= 0){
     /* Got a bullish crossover!
@@ -176,7 +172,7 @@ function fetchDBData($dataSize = 200){
      if possible manage with only one query. 
   */
   /* We need to get the date exactly $dataSize days in past. Thus this query */ 
-  $nifty_query = "select niftylatest.timestamp as latest from (SELECT close, timestamp from cmbhav where symbol = 'NIFTY' order by timestamp desc limit " . $dataSize . ") as niftylatest order by niftylatest.timestamp asc limit 1";
+  $nifty_query = "SELECT timestamp from cmbhav where symbol = 'NIFTY' order by timestamp desc limit $dataSize , 1";
   $result = mysql_query($nifty_query);
   if (!$result) {
     echo 'Could not run query: ' . mysql_error();
@@ -187,8 +183,9 @@ function fetchDBData($dataSize = 200){
   $first_date = $row[0];
   // Free the result
   mysql_free_result($result);
-
-  $fetch_query = "SELECT niftylist.symbol as symbol, close, TOTTRDQTY as volume, timestamp FROM niftylist,cmbhav WHERE niftylist.symbol = cmbhav.symbol and timestamp > '" . $first_date . "' and cmbhav.series = 'EQ' order by timestamp asc";
+  
+  /* Get all the required data from db */
+  $fetch_query = "SELECT niftylist.symbol as symbol, close, TOTTRDQTY as volume, timestamp FROM niftylist,cmbhav WHERE niftylist.symbol = cmbhav.symbol and timestamp > '$first_date' and cmbhav.series = 'EQ' order by timestamp asc";
   $all_result = mysql_query($fetch_query);
   if (!$all_result) {
     echo 'Could not run query: ' . mysql_error();
