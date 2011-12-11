@@ -2,3 +2,5 @@
 *.js
 error_log
 *.png
+*.scssc
+*.sassc

@@ -1,0 +1,130 @@
+@import "base"
+
+body
+  font:
+    style          :   normal
+    weight         :   300
+    family         :   proxima-nova,sans-serif
+    size           :   14px
+  color            :   $base_text_color
+
+h2
+  margin           :   2 * $default_space / 3 0 2 * $default_space / 6
+  color            :   $sub_text_color
+  font:
+    size           :   16px
+    weight         :   500
+
+p
+  color            :   $p_text_color
+  font:
+    size           :   $p_text_size
+    weight         :   500
+  line-height      :   $p_line_height
+
+table
+  width            :   100%
+  margin           :   $default_space 0
+
+  td, th
+    border-bottom  :   1px solid $default_border
+    padding        :   10px 5px
+    text-align     :   center
+
+  th
+    background     :   $default_background
+
+  .coname
+    color          :   $active_blue
+    font-weight    :   600
+    text-align     :   left
+
+  th.coname
+    color          :   $base_text_color
+
+#pageheader
+  background       :   $default_background
+  border-bottom    :   1px solid $default_border
+  height           :   $header_height
+  width            :   100%
+
+  #headercontent
+    width          :   $content_width
+    margin         :   0 auto
+    padding        :   $default_space 0
+
+    h1
+      color        :   #111
+      font:
+        style      :   normal
+        weight     :   300
+        size       :   $default_space
+      line-height  :   $default_space
+
+#topholder
+  width            :   $content_width
+  margin           :   0 auto
+
+#infoholder
+  background       :   $default_background
+  border-bottom    :   1px solid $default_border
+  border-top       :   1px solid $default_border
+
+  #infocontent
+    width          :   $content_width
+    margin         :   0 auto
+    padding        :   $default_space / 3 0
+    +legacy-pie-clearfix
+
+    .column
+      float        :   left
+      width        :   ($content_width - (($num_column - 1) * $default_space)) / $num_column
+      margin-top   :   $default_space
+      margin-right :   $default_space
+    
+    .lastcolumn
+      margin-right :   0
+
+    p
+      text-align   :   justify
+
+#bottomholder
+  width            :   $content_width
+  margin           :   0 auto
+  padding          :   $default_space 0
+
+  p
+    text-align     :   justify
+
+#comments
+  border-top       :   1px solid $default_border
+  background       :   $default_background
+  border-bottom    :   1px solid $default_border
+
+  #commentscontent
+    width            :   $content_width
+    margin           :   0 auto
+    padding          :   $default_space / 3 0
+footer
+  background       :   white
+  height           :   200px
+
+  #footercontent
+    width          :   $content_width
+    margin         :   0 auto
+    padding        :   $default_space / 3 0
+    line-height    :   12px
+    font-size      :   12px
+    color          :   $p_text_color
+    a
+      text-decoration    :   none
+      color              :   $active_blue
+      &:hover
+        text-decoration  :   underline
+    .contactme
+      float        :   right
+      
+      #twitterfollow
+        color      :   $twitter_color  
+    .copy
+      text-align   :   center

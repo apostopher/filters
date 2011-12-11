@@ -64,6 +64,9 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
   $results["macd"] = array();
   $results["signal"] = array();
 
+  /* MACD calculation must be done with single pass. Iterate once and calculate
+     everything.
+  */
   for($i = 0; $i < $datacount; $i++){
 
     $curr_data = $dataStore[$i];
@@ -117,9 +120,8 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
   return array("results" => $results, "v" => $volume, "c" => $close, "d" => $today);
 }
 
-function isBullCross($value){
-  /* Bull cross is MACD crosses Signal and goes up
-     today's volume is more that average of last week's volume
+function isCross($value){
+  /* Check for MACD signal line crossover
   */
   $result = $value["results"];
   $macd = $result["macd"];
@@ -130,33 +132,24 @@ function isBullCross($value){
   $yMacd = $macd[$countMacd - 2];
   $todaySignal = $signal[$countSignal - 1];
   $ySignal = $signal[$countSignal - 2];
-
+  
   if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd <= 0){
-    /* Got a bullish crossover! */
-    return true;
+    /* Got a bullish crossover!
+       Bear cross is MACD crosses Signal and goes down
+       today's volume is more that average of last week's volume
+    */
+    return 1;
   }
-  return false;
-}
-
-function isBearCross($value){
-  /* Bear cross is MACD crosses Signal and goes down
-     today's volume is more that average of last week's volume
-  */
-  $result = $value["results"];
-  $macd = $result["macd"];
-  $countMacd = count($macd);
-  $signal = $result["signal"];
-  $countSignal = count($signal);
-  $todayMacd = $macd[$countMacd - 1];
-  $yMacd = $macd[$countMacd - 2];
-  $todaySignal = $signal[$countSignal - 1];
-  $ySignal = $signal[$countSignal - 2];
 
   if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd >= 0){
-    /* Got a bearish crossover! */
-    return true;
+    /* Got a bearish crossover!
+       Bear cross is MACD crosses Signal and goes down
+       today's volume is more that average of last week's volume
+    */
+    return -1;
   }
-  return false;
+
+  return 0;
 }
 
 function processMacdCrossOver($data){
@@ -167,9 +160,10 @@ function processMacdCrossOver($data){
   $result["S"] = array();
   
   foreach($data as $scrip => $value){
-    if(isBullCross($value)){
+    $gotCross = isCross($value);
+    if($gotCross == 1){
       array_push($result["B"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"]));
-    }else if(isBearCross($value)){
+    }else if($gotCross == -1){
       array_push($result["S"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"]));
     }
   }
