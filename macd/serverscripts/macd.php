@@ -29,7 +29,7 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
 
   /* Check whether we have enough data to calculate MA crossover */
   $datacount = count($dataStore);
-  $required = $mid * 2;
+  $required = $mid * 6;
   if($datacount < $required){
     /* Unable to proceed return zero */
     error_log("Not enough data(count = " . $datacount . ", required = " . $required . "): ". $scrip);
@@ -37,24 +37,25 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
   }
 
   /* Initialize vars */
-
-  $yEmaSm  = 0;
-  $yEmaMid = 0;
-  $yEmaSig = 0;
+  $j       = 0;
+  $long    = 200;
   
-  $emaSm  = 0;
-  $emaMid = 0;
-  $emaSig = 0;
+  $emaSm   = 0;
+  $emaMid  = 0;
+  $emaLong = 0;
+  $emaSig  = 0;
   
   /* Calculate EMA multipliers */
-  $multSm  = 2 / ($sm + 1);
-  $multMid = 2 / ($mid + 1);
-  $multSig = 2 / ($sig + 1);
+  $multSm   = 2 / ($sm + 1);
+  $multMid  = 2 / ($mid + 1);
+  $multLong = 2 / ($long + 1);
+  $multSig  = 2 / ($sig + 1);
   
-  $totalSm  = 0;
-  $totalMid = 0;
-  $totalSig = 0;
-  $totalV   = 0;
+  $totalSm   = 0;
+  $totalMid  = 0;
+  $totalLong = 0;
+  $totalSig  = 0;
+  $totalV    = 0;
   
   $results           = array();
   $results["macd"]   = array();
@@ -73,6 +74,7 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
       $totalSm += $curr_c;
     }else if($i == $sm - 1){
       $emaSm = $totalSm / $sm;
+      unset($totalSm);
     }else {
       $emaSm = (($curr_c - $emaSm) * $multSm) + $emaSm;
     }
@@ -81,39 +83,52 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
       $totalMid += $curr_c;
     }else if($i == $mid - 1){
       $emaMid = $totalMid / $mid;
+      unset($totalMid);
     }else {
       $emaMid = (($curr_c - $emaMid) * $multMid) + $emaMid;
     }
     /**************************************************************************/
+    if($i < $long){
+      $totalLong += $curr_c;
+    }else if($i == $long - 1){
+      $emaLong = $totalLong / $long;
+      unset($totalLong);
+    }else {
+      $emaLong = (($curr_c - $emaLong) * $multLong) + $emaLong;
+    }
+    /**************************************************************************/
     if($emaSm && $emaMid){
-      array_push($results["macd"], round($emaSm - $emaMid, 2));
+      $curr_macd = round($emaSm - $emaMid, 4);
+      array_push($results["macd"], $curr_macd);
+
+      /* counter for macd values */
+      $j += 1;
+
+      /* Calculate signal */
+      if($j <= $sig){
+        $totalSig += $curr_macd;
+      }else if($j == $sig){
+        $emaSig = $totalSig / $sig;
+        unset($totalSig);
+      }else {
+        $emaSig = (($curr_macd - $emaSig) * $multSig) + $emaSig;
+      }
+
+      /* Add to results */
+      if($emaSig){
+        array_push($results["signal"], round($emaSig, 4));
+      }
     }
     /**************************************************************************/
     if($i == $datacount - 1){
-      $today = $curr_data["d"];
-      $close = &$curr_c;
+      $today  = &$curr_data["d"];
+      $close  = &$curr_c;
       $volume = &$curr_v;
     }
     /**************************************************************************/
   }
 
-  /* Now calculate signal line */
-  $macdCount = count($results["macd"]);
-
-  for($i = 0; $i < $macdCount; $i++){
-    $curr_macd = $results["macd"][$i];
-    if($i < $sig){
-      $totalSig += $curr_macd;
-    }else if($i == $sig - 1){
-      $emaSig = $totalSig / $sig;
-      array_push($results["signal"], $emaSig);
-    }else {
-      $emaSig = (($curr_macd - $emaSig) * $multSig) + $emaSig;
-      array_push($results["signal"], round($emaSig, 2));
-    }
-  }
-  
-  return array("results" => $results, "v" => $volume, "c" => $close, "d" => $today);
+  return array("results" => $results, "v" => $volume, "c" => $close, "d" => $today, "l" => round($emaLong, 4));
 }
 
 function isCross($value){
@@ -158,15 +173,15 @@ function processMacdCrossOver($data){
   foreach($data as $scrip => $value){
     $gotCross = isCross($value);
     if($gotCross == 1){
-      array_push($result["B"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"]));
+      array_push($result["B"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"], "l" => $value["l"]));
     }else if($gotCross == -1){
-      array_push($result["S"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"]));
+      array_push($result["S"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"], "l" => $value["l"]));
     }
   }
   return $result;
 }
 
-function fetchDBData($dataSize = 200){
+function fetchDBData($dataSize = 400){
   /* This function fetches data from database
      Curently it makes two queries. one query is just to get the apropriate date in past.
      if possible manage with only one query. 
@@ -250,11 +265,11 @@ function addResultToDB($result){
   $query_values = "";
   foreach($result as $type => $list){
     foreach($list as $details){
-      $query_values = $query_values . ",('" . $details["name"] . "','" . $type . "'," . $details["c"] . ",'" . $details["d"] . "')"; 
+      $query_values = $query_values . ",('" . $details["name"] . "','" . $type . "'," . $details["c"] . "," . $details["l"] . ",'" . $details["d"] . "')"; 
     }
   }
   
-  $insert_query = "INSERT INTO macdcrossover (symbol, type, close, date) VALUES " . substr($query_values, 1);
+  $insert_query = "INSERT INTO macdcrossover (symbol, type, close, emalong, date) VALUES " . substr($query_values, 1);
   /* Insert the data in macrossover table */
   $insert_result = mysql_query($insert_query);
   if (!$insert_result) {
