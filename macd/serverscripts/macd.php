@@ -17,7 +17,13 @@ require_once('../../common/dba.php');
 // Load filter functions.
 require_once ('../../common/filter_functions.php');
 
-function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
+function processMacdData($dataStore
+                        ,$scrip
+                        ,$all = false
+                        ,$sm = 12
+                        ,$mid = 26
+                        ,$sig = 9
+                        ){
   /*Process MA data as follows
     1. Loop only once to calculate everything
     2. get 26 day EMA for today and yesterday
@@ -26,15 +32,6 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
     5. get today's Volume
     6. get average of 5 day volume
   */
-
-  /* Check whether we have enough data to calculate MA crossover */
-  $datacount = count($dataStore);
-  $required = $mid * 6;
-  if($datacount < $required){
-    /* Unable to proceed return zero */
-    error_log("Not enough data(count = " . $datacount . ", required = " . $required . "): ". $scrip);
-    return 0;
-  }
 
   /* Initialize vars */
   $j       = 0;
@@ -57,9 +54,16 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
   $totalSig  = 0;
   $totalV    = 0;
   
-  $results           = array();
-  $results["macd"]   = array();
-  $results["signal"] = array();
+  $results   = array();
+
+  /* Check whether we have enough data to calculate MA crossover */
+  $datacount = count($dataStore);
+  $required = $mid * 6;
+  if($datacount < $required){
+    /* Unable to proceed return zero */
+    error_log("Not enough data(count = $datacount, required = $required): $scrip");
+    return $results;
+  }
 
   /* MACD calculation must be done with single pass. Iterate once and calculate
      everything.
@@ -69,82 +73,99 @@ function processMacdData($dataStore, $scrip, $sm = 12, $mid = 26, $sig = 9){
     $curr_data = $dataStore[$i];
     $curr_c    = $curr_data["c"];
     $curr_v    = $curr_data["v"];
+    $curr_d    = $curr_data["d"];
+
     /**************************************************************************/
     if($i < $sm){
       $totalSm += $curr_c;
-    }else if($i == $sm - 1){
+    }
+    if($i == $sm - 1){
       $emaSm = $totalSm / $sm;
       unset($totalSm);
-    }else {
+    }
+    if($i >= $sm){
       $emaSm = (($curr_c - $emaSm) * $multSm) + $emaSm;
     }
     /**************************************************************************/
     if($i < $mid){
       $totalMid += $curr_c;
-    }else if($i == $mid - 1){
+    }
+    if($i == $mid - 1){
       $emaMid = $totalMid / $mid;
       unset($totalMid);
-    }else {
+    }
+    if($i >= $mid){
       $emaMid = (($curr_c - $emaMid) * $multMid) + $emaMid;
     }
     /**************************************************************************/
     if($i < $long){
       $totalLong += $curr_c;
-    }else if($i == $long - 1){
+    }
+    if($i == $long - 1){
       $emaLong = $totalLong / $long;
       unset($totalLong);
-    }else {
+    }
+    if($i >= $long){
       $emaLong = (($curr_c - $emaLong) * $multLong) + $emaLong;
     }
     /**************************************************************************/
     if($emaSm && $emaMid){
-      $curr_macd = round($emaSm - $emaMid, 4);
-      array_push($results["macd"], $curr_macd);
-
-      /* counter for macd values */
-      $j += 1;
+      $curr_macd = round($emaSm - $emaMid, 2);
 
       /* Calculate signal */
-      if($j <= $sig){
+      if($j < $sig){
         $totalSig += $curr_macd;
-      }else if($j == $sig){
+      }
+      if($j == $sig - 1){
         $emaSig = $totalSig / $sig;
         unset($totalSig);
-      }else {
+      }
+      if($j >= $sig){
         $emaSig = (($curr_macd - $emaSig) * $multSig) + $emaSig;
       }
 
       /* Add to results */
       if($emaSig){
-        array_push($results["signal"], round($emaSig, 4));
+        if($all){
+          $results[$curr_d] = array("m" => $curr_macd
+                                   ,"s" => round($emaSig, 2)
+                                   ,"c" => $curr_c
+                                   ,"v" => $curr_v
+                                   );
+        }else{
+          if($i >= $datacount - 2){
+            $results[] = array("macd"   => $curr_macd
+                              ,"signal" => round($emaSig, 2)
+                              ,"close"  => $curr_c
+                              ,"volume" => $curr_v
+                              ,"long"   => round($emaLong)
+                              ,"date"   => $curr_d
+                              );
+          }
+        }
       }
-    }
-    /**************************************************************************/
-    if($i == $datacount - 1){
-      $today  = &$curr_data["d"];
-      $close  = &$curr_c;
-      $volume = &$curr_v;
+      /* counter for macd values */
+      $j += 1;
     }
     /**************************************************************************/
   }
 
-  return array("results" => $results, "v" => $volume, "c" => $close, "d" => $today, "l" => round($emaLong, 4));
+  return $results;
 }
 
 function isCross($value){
   /* Check for MACD signal line crossover
   */
-  $result      =  $value["results"];
-  $macd        =  $result["macd"];
-  $countMacd   =  count($macd);
-  $signal      =  $result["signal"];
-  $countSignal =  count($signal);
-  $todayMacd   =  $macd[$countMacd - 1];
-  $yMacd       =  $macd[$countMacd - 2];
-  $todaySignal =  $signal[$countSignal - 1];
-  $ySignal     =  $signal[$countSignal - 2];
+
+  $today = $value[1];
+  $yesterday = $value[0];
+
+  $todayMacd   =  $today["macd"];
+  $yMacd       =  $yesterday["macd"];
+  $todaySignal =  $today["signal"];
+  $ySignal     =  $yesterday["signal"];
   
-  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd <= 0){
+  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd < 0){
     /* Got a bullish crossover!
        Bear cross is MACD crosses Signal and goes down
        today's volume is more that average of last week's volume
@@ -152,7 +173,7 @@ function isCross($value){
     return 1;
   }
 
-  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd >= 0){
+  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd > 0){
     /* Got a bearish crossover!
        Bear cross is MACD crosses Signal and goes down
        today's volume is more that average of last week's volume
@@ -167,27 +188,38 @@ function processMacdCrossOver($data){
   /*
     Get whether there are any bullish or bearish crossovers.
   */
-  $result["B"] = array();
-  $result["S"] = array();
-  
+
   foreach($data as $scrip => $value){
     $gotCross = isCross($value);
     if($gotCross == 1){
-      array_push($result["B"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"], "l" => $value["l"]));
+      $result["B"][] = array("name" => $scrip
+                            ,"c"    => $value[1]["close"]
+                            ,"d"    => $value[1]["date"]
+                            ,"l"    => $value[1]["long"]
+                            );
     }else if($gotCross == -1){
-      array_push($result["S"], array("name" => $scrip, "c" => $value["c"], "d" => $value["d"], "l" => $value["l"]));
+      $result["S"][] = array("name" => $scrip
+                            ,"c"    => $value[1]["close"]
+                            ,"d"    => $value[1]["date"]
+                            ,"l"    => $value[1]["long"]
+                            );
     }
   }
   return $result;
 }
 
-function fetchDBData($dataSize = 400){
+function sqlSafe($scripname){
+    return mysql_real_escape_string($scripname);
+}
+
+function fetchDBData($scrips = NULL, $dataSize = 400){
   /* This function fetches data from database
      Curently it makes two queries. one query is just to get the apropriate date in past.
      if possible manage with only one query. 
   */
+
   /* We need to get the date exactly $dataSize days in past. Thus this query */ 
-  $nifty_query = "SELECT timestamp from cmbhav where symbol = 'NIFTY' order by timestamp desc limit $dataSize , 1";
+  $nifty_query = "SELECT timestamp FROM cmbhav WHERE symbol = 'NIFTY' ORDER BY timestamp DESC LIMIT $dataSize , 1";
   $result = mysql_query($nifty_query);
   if (!$result) {
     echo 'Could not run query: ' . mysql_error();
@@ -200,7 +232,18 @@ function fetchDBData($dataSize = 400){
   mysql_free_result($result);
   
   /* Get all the required data from db */
-  $fetch_query = "SELECT niftylist.symbol as symbol, close, TOTTRDQTY as volume, timestamp FROM niftylist,cmbhav WHERE niftylist.symbol = cmbhav.symbol and timestamp > '$first_date' and cmbhav.series = 'EQ' order by timestamp asc";
+  if(is_array($scrips)){
+    /* We have only handful of scrips to process
+       Make sure these scrips are SQL safe.
+    */
+    $safe_scrips = array_map("sqlSafe", $scrips);
+    $safe_scrip_names = join("','", $safe_scrips);
+    /* Now that the scripnames are SQL safe create query string */
+    $fetch_query = "SELECT niftylist.symbol AS symbol, close, TOTTRDQTY as volume, timestamp FROM niftylist,cmbhav WHERE niftylist.symbol = cmbhav.symbol and cmbhav.symbol IN ('$safe_scrip_names') and timestamp > '$first_date' and cmbhav.series = 'EQ' order by timestamp asc";
+  }else{
+    $fetch_query = "SELECT niftylist.symbol AS symbol, close, TOTTRDQTY as volume, timestamp FROM niftylist,cmbhav WHERE niftylist.symbol = cmbhav.symbol and timestamp > '$first_date' and cmbhav.series = 'EQ' order by timestamp asc";
+  }
+  
   $all_result = mysql_query($fetch_query);
   if (!$all_result) {
     echo 'Could not run query: ' . mysql_error();
@@ -208,10 +251,10 @@ function fetchDBData($dataSize = 400){
   }
 
   while($row = mysql_fetch_array($all_result)){
-    if(!$dataStore[$row['symbol']]){
-      $dataStore[$row['symbol']] = array();
-    }
-    array_push($dataStore[$row['symbol']], array("c" => $row['close'], "v" => $row['volume'], "d" => $row['timestamp']));
+    $dataStore[$row['symbol']][] = array("c" => +$row['close']
+                                        ,"v" => +$row['volume']
+                                        ,"d" => $row['timestamp']
+                                        );
   }
 
   // Free the result
@@ -303,7 +346,7 @@ function todayMacdCrossOver(){
       $data[$scrip] = $processed;
     }
   }
-
+  unset($dataStore);
   $result = processMacdCrossOver($data);
   /* This script does not return anything. 
     It adds the crossover results to macrossover table.
@@ -312,10 +355,43 @@ function todayMacdCrossOver(){
   return true;
 }
 
+function getMacdData($scrips){
+  /* Get the macd data for all the scrips.
+     This function is called at runtime to get the macd
+     data so that it can be plotted as a graph.
+  */ 
+    
+  $dataStore = fetchDBData($scrips);
+  if(is_array($dataStore)){
+    foreach($dataStore as $scrip => $value){
+      $processed = processMacdData($value, $scrip, true);
+      if($processed){
+        /* processMaData returns zero if its unable to calculate */
+        $data[$scrip] = $processed;
+      }
+    }
+  }else{
+    $data = "No records found";
+  }
+  unset($dataStore);
+  return $data;
+}
+
 /* All required functions are defined so get to business */
-todayMacdCrossOver();
-/* Update status */
-updateStatus();
+if(isset($_GET['scrips'])){
+  $scripnames = $_GET['scrips'];
+  $scrips = explode(",", $scripnames);
+  if(count($scrips)){
+    /* We have some data to process */
+    $response = getMacdData($scrips);
+    header('Content-type: application/json');
+    echo json_encode($response);
+  }
+}else{
+  todayMacdCrossOver();
+  /* Update status */
+  updateStatus();
+}
 mysql_close($con);
 exit;
 ?>
