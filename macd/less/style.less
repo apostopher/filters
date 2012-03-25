@@ -1,7 +1,7 @@
 @import "bootstrap/bootstrap.less";
 
 body {
-  padding-top: 60px;
+  //padding-top: 60px;
   padding-bottom: 40px;
 }
 
@@ -9,16 +9,97 @@ body {
 
 
 /* ===== Primary Styles ========================================================
-   Author:
+   Author: Rahul Devaskar
    ========================================================================== */
+@backlight:       #FAFAFA;
+@backborder:      #CACACA;
+@activeColor:     #DD390D;
 
+// Snow
+@snowlight:       #F9FAFC;
+@snowline:        #DBDCDE;
 
+.navbar-inner {
+  padding:  20px;
+  background: url("../img/bg-noise.jpg") repeat scroll;
+  .border-radius(0px);
+  border-bottom: 1px solid @backborder;
+  @shadow: inset 0 -1px 5px rgba(0,0,0,.08);
+  .box-shadow(@shadow);
+}
 
+.navbar .brand{
+	color:	@grayDark;
+	font-size: 24px;
+	line-height:1;
+	font-weight:bold;
+	padding: 0px 20px;
+}
 
+.bandeven, .bandodd{
+  padding: 20px 0px;
+}
+.bandodd {
+  background: url("../img/bg-noise.jpg") repeat scroll;
+  border-top:1px solid @backborder;
+  border-bottom:1px solid @backborder;
+  @shadow: inset 0 1px 5px rgba(0,0,0,.08),inset 0 -1px 5px rgba(0,0,0,.08);
+  .box-shadow(@shadow);
+}
 
+.bandeven{
+  background: @white;
+}
 
+.mid{
+  text-align:center;
+}
+.notop{
+  padding-top:0;
+}
 
+.container h2{
+  margin: 16px 0;
+  color: @activeColor;
+  font-size: 16px;
+  font-weight: bold;
+  line-height:1.5;
+}
 
+h3 {
+  color: @activeColor;
+}
 
+footer {
+  padding: 8px 0;
+  line-height: 1;
+  font-size: 12px;
+}
 
+p {
+  text-align:justify;
+}
 
+.result{
+  color: @activeColor;
+  font-size:28px;
+  font-weight:bold;
+  margin:0.4em 0;
+}
+
+.basedon{
+  font-size: 0.9em;
+  margin:0.5em 0;
+}
+
+.label{
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
+}
+
+.alert{
+  margin-bottom:0px;
+}
+
+.thumbnail{
+  margin-bottom:21px;
+}
