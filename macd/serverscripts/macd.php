@@ -165,7 +165,7 @@ function isCross($value){
   $todaySignal =  $today["signal"];
   $ySignal     =  $yesterday["signal"];
   
-  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd < 0){
+  if($yMacd <= $ySignal && $todayMacd > $todaySignal && $todayMacd < 0 && $todayMacd > 1.1 * $yMacd){
     /* Got a bullish crossover!
        Bear cross is MACD crosses Signal and goes down
        today's volume is more that average of last week's volume
@@ -173,7 +173,7 @@ function isCross($value){
     return 1;
   }
 
-  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd > 0){
+  if($yMacd >= $ySignal && $todayMacd < $todaySignal && $todayMacd > 0 && $yMacd > 1.1 * $todayMacd){
     /* Got a bearish crossover!
        Bear cross is MACD crosses Signal and goes down
        today's volume is more that average of last week's volume
