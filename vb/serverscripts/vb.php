@@ -144,7 +144,6 @@ function getStatus(){
     If we have already calculated breakouts then exit.
   */
   $status_query = "SELECT id from updatestatus WHERE tablename = 'vbreakout' AND timestamp = CURDATE()";
-  echo $status_query;
   $status = mysql_query($status_query);
   if (!$status) {
     echo 'Could not run query4: ' . mysql_error();
